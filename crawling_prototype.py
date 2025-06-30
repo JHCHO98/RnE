@@ -1,27 +1,76 @@
 from bs4 import BeautifulSoup
 
-def extract_video_info_from_html(file_path):
-    with open(file_path, 'r', encoding='utf-8') as f:
-        html = f.read()
+with open("main.html", "r", encoding="utf-8") as file:
+    html = file.read()
 
-    soup = BeautifulSoup(html, 'html.parser')
+soup = BeautifulSoup(html, "html.parser")
 
-    # 각 영상 하나는 ytd-rich-item-renderer
-    video_blocks = soup.find_all('ytd-rich-item-renderer')
+shorts = []
 
-    for block in video_blocks:
-        # 영상 제목 추출
-        title_tag = block.find('yt-formatted-string', {'id': 'video-title'})
-        title = title_tag.text.strip() if title_tag else '제목 없음'
+# Shorts 기준 탐색
+short_items = soup.select("ytd-rich-item-renderer.style-scope.ytd-rich-shelf-renderer")
+for item in short_items:
+    # 제목
+    title_tag = item.select_one(".shortsLockupViewModelHostMetadataTitle a")
+    if title_tag:
+        title = title_tag.get_text(strip=True)
+        href = title_tag["href"]
+        full_url = f"https://www.youtube.com{href}"
+        shorts.append({
+            "type": "shorts",
+            "title": title,
+            "url": full_url
+        })
 
-        # 채널 이름 추출
-        channel_tag = block.find('ytd-channel-name')
-        channel_link = channel_tag.find('a') if channel_tag else None
-        channel = channel_link.text.strip() if channel_link else '채널명 없음'
+# 예시 출력
+for s in shorts:
+    print(f"[SHORTS] {s['title']} → {s['url']}")
 
-        print(f'제목: {title}')
-        print(f'채널: {channel}')
-        print('-' * 40)
+videos = []
+shorts = []
 
-# 예시 실행
-extract_video_info_from_html('main.html')
+for item in soup.select("ytd-rich-item-renderer"):
+    if item.get("class") and "ytd-rich-shelf-renderer" in item["class"]:
+        
+        # 쇼츠
+        title_tag = item.select_one(".shortsLockupViewModelHostMetadataTitle a")
+        
+        if title_tag:
+            
+            title = title_tag.get_text(strip=True)
+            href = title_tag.get("href")
+            
+            if href:
+                shorts.append({
+                    "type": "shorts",
+                    "title": title,
+                    "url": f"https://www.youtube.com{href}"
+                })
+            
+
+
+    else:
+        # 일반 영상
+        title_tag = item.select_one("#video-title")
+        channel_tag = item.select_one("ytd-channel-name")
+        if not channel_tag:
+            continue  # 광고일 가능성 높음
+
+        title_link = item.select_one("a#video-title-link")
+        title_tag = item.select_one("yt-formatted-string#video-title")
+
+        if title_link and title_link.has_attr("href") and title_tag:
+            url = "https://www.youtube.com" + title_link["href"]
+            title = title_tag.get_text(strip=True)
+            channel = channel_tag.get_text(strip=True)
+
+            videos.append({
+                "title": title,
+                "url": url,
+                "channel": channel
+            })
+
+for v in videos:
+    print(f"[영상] {v['title']} ({v['channel']}) → {v['url']}")
+for s in shorts:
+    print(f"[쇼츠] {s['title']} → {s['url']}")
