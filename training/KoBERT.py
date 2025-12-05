@@ -131,7 +131,30 @@ scheduler = get_linear_schedule_with_warmup(
 )
 
 # 손실 함수 (다중 분류의 경우 CrossEntropyLoss)
-loss_fn = torch.nn.CrossEntropyLoss().to(DEVICE)
+if 'label_id' in train_df.columns and len(train_df) > 0:
+    
+    # 2. 역빈도에 기반하여 가중치를 계산합니다.
+    full_weights = np.zeros(NUM_CLASSES)
+    # value_counts()를 사용해 각 클래스 인덱스(label_id)의 개수를 얻습니다.
+    for idx, count in train_df['label_id'].value_counts().items():
+        # 데이터 수가 0이 아닌 경우에만 가중치를 계산합니다 (1/count).
+        if count > 0:
+            full_weights[idx] = 1.0 / count
+    
+    # 3. 가중치 정규화 (선택 사항: 가중치 합이 클래스 개수가 되도록)
+    if (full_weights > 0).sum() > 0:
+        full_weights = full_weights / full_weights.sum() * (full_weights > 0).sum() 
+    
+    # 4. 텐서 변환 및 손실 함수에 적용
+    class_weights = torch.tensor(full_weights, dtype=torch.float).to(DEVICE)
+    loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights).to(DEVICE)
+    print("✅ 클래스 불균형 보정 (Class Weighting)이 손실 함수에 적용되었습니다.")
+else:
+    # 훈련 데이터프레임이 비어있거나 'label_id' 컬럼이 없는 경우
+    loss_fn = torch.nn.CrossEntropyLoss().to(DEVICE)
+    print("기본 CrossEntropyLoss가 적용되었습니다.")
+
+# [클래스 불균형 보정 로직 삽입 끝]
 
 # --- 4. 학습 함수 정의 ---
 def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler):
