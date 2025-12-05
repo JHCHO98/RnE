@@ -117,3 +117,133 @@ electra_model = AutoModel.from_pretrained(MODEL_NAME)
 model = KCELectraClassifier(electra_model, NUM_CLASSES)
 model.to(DEVICE)
 
+optimizer = AdamW(model.parameters(), lr=LEARNING_RATE, correct_bias=False)
+total_steps = len(train_dataloader) * NUM_EPOCHS
+scheduler = get_linear_schedule_with_warmup(
+    optimizer,
+    num_warmup_steps=0,
+    num_training_steps=total_steps
+)
+# 손실 함수
+if 'label_id' in train_df.columns and len(train_df) > 0:
+    
+    # 2. 역빈도에 기반하여 가중치를 계산합니다.
+    full_weights = np.zeros(NUM_CLASSES)
+    # value_counts()를 사용해 각 클래스 인덱스(label_id)의 개수를 얻습니다.
+    for idx, count in train_df['label_id'].value_counts().items():
+        # 데이터 수가 0이 아닌 경우에만 가중치를 계산합니다 (1/count).
+        if count > 0:
+            full_weights[idx] = 1.0 / count
+    
+    # 3. 가중치 정규화 (선택 사항: 가중치 합이 클래스 개수가 되도록)
+    if (full_weights > 0).sum() > 0:
+        full_weights = full_weights / full_weights.sum() * (full_weights > 0).sum() 
+    
+    # 4. 텐서 변환 및 손실 함수에 적용
+    class_weights = torch.tensor(full_weights, dtype=torch.float).to(DEVICE)
+    loss_fn = torch.nn.CrossEntropyLoss(weight=class_weights).to(DEVICE)
+    print("✅ 클래스 불균형 보정 (Class Weighting)이 손실 함수에 적용되었습니다.")
+else:
+    # 훈련 데이터프레임이 비어있거나 'label_id' 컬럼이 없는 경우
+    loss_fn = torch.nn.CrossEntropyLoss().to(DEVICE)
+    print("기본 CrossEntropyLoss가 적용되었습니다.")
+
+# [클래스 불균형 보정 로직 삽입 끝]
+
+
+# --- 4. 학습 및 평가 함수 정의 (KoBERT 코드와 동일) ---
+def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler):
+    model.train()
+    losses = []
+    correct_predictions = 0
+
+    for batch in tqdm(data_loader, desc="Training"):
+        input_ids = batch['input_ids'].to(device)
+        attention_mask = batch['attention_mask'].to(device)
+        token_type_ids = batch['token_type_ids'].to(device)
+        labels = batch['labels'].to(device)
+
+        outputs = model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids
+        )
+
+        _, preds = torch.max(outputs, dim=1)
+        loss = loss_fn(outputs, labels)
+
+        correct_predictions += torch.sum(preds == labels)
+        losses.append(loss.item())
+
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+        scheduler.step()
+        optimizer.zero_grad()
+
+    return correct_predictions.double() / len(data_loader.dataset), np.mean(losses)
+
+def eval_model(model, data_loader, loss_fn, device):
+    model.eval()
+    losses = []
+    correct_predictions = 0
+
+    with torch.no_grad():
+        for batch in tqdm(data_loader, desc="Evaluation"):
+            input_ids = batch['input_ids'].to(device)
+            attention_mask = batch['attention_mask'].to(device)
+            token_type_ids = batch['token_type_ids'].to(device)
+            labels = batch['labels'].to(device)
+
+            outputs = model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                token_type_ids=token_type_ids
+            )
+
+            _, preds = torch.max(outputs, dim=1)
+            loss = loss_fn(outputs, labels)
+
+            correct_predictions += torch.sum(preds == labels)
+            losses.append(loss.item())
+
+    return correct_predictions.double() / len(data_loader.dataset), np.mean(losses)
+
+
+# --- 5. 학습 루프 실행 (KoBERT 코드와 동일) ---
+print("\n--- 학습 시작 ---")
+best_accuracy = 0
+
+for epoch in range(NUM_EPOCHS):
+    print(f'\nEpoch {epoch + 1}/{NUM_EPOCHS}')
+    print('-' * 10)
+
+    # 학습
+    train_acc, train_loss = train_epoch(
+        model,
+        train_dataloader,
+        loss_fn,
+        optimizer,
+        DEVICE,
+        scheduler
+    )
+
+    print(f'Train loss {train_loss:.4f} accuracy {train_acc:.4f}')
+
+    # 검증
+    val_acc, val_loss = eval_model(
+        model,
+        val_dataloader,
+        loss_fn,
+        DEVICE
+    )
+
+    print(f'Val   loss {val_loss:.4f} accuracy {val_acc:.4f}')
+
+    # 모델 저장 (가장 좋은 성능의 모델)
+    if val_acc > best_accuracy:
+        torch.save(model.state_dict(), 'best_kcelectra_model.bin')
+        best_accuracy = val_acc
+        print("-> Best model 저장 완료.")
+
+print("\n--- 학습 완료 ---")
