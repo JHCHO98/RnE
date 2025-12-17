@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "Youtube History Collector",
+    "version": "3.0",
+    "description": "대용량 시청 기록을 수집하여 분석 대시보드로 전송합니다.",
+    "permissions": [
+        "activeTab",
+        "scripting"
+    ],
+    "host_permissions": [
+        "https://www.youtube.com/*",
+        "http://localhost:3000/*"
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": "unrevr.png"
+    },
+    "icons": {
+        "16": "unrevr.png",
+        "48": "unrevr.png",
+        "128": "unrevr.png"
+    }
+}

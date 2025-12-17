@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Algo.Rithm Collector</title>
+    <style>
+        :root {
+            --bg-color: #09090b;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --primary-gradient: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+            --text-main: #ffffff;
+            --text-sub: #a1a1aa;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            /* 드래그 방지 */
+        }
+
+        body {
+            width: 350px;
+            height: 480px;
+            /* 고정 높이 */
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 20%);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            text-align: center;
+        }
+
+        /* Logo Area */
+        .logo-area {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #fff, #a1a1aa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+
+        .title .dot {
+            color: #8b5cf6;
+            -webkit-text-fill-color: #8b5cf6;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: var(--text-sub);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* Status Card */
+        .status-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .icon-circle {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: var(--text-sub);
+            line-height: 1.5;
+        }
+
+        .status-text strong {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* Action Button */
+        #collectBtn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: var(--primary-gradient);
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #collectBtn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        #collectBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6);
+        }
+
+        #collectBtn:hover::before {
+            left: 100%;
+        }
+
+        #collectBtn:active {
+            transform: translateY(0);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: auto;
+            padding: 16px;
+            font-size: 11px;
+            color: #52525b;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            width: 100%;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+            }
+        }
+
+        .pulse-effect {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="logo-area">
+            <div class="title">ALGO<span class="dot">.</span>RITHM</div>
+            <div class="subtitle">Bias Diagnostic Engine</div>
+        </div>
+
+        <div class="status-card">
+            <div class="icon-circle">
+                <!-- YouTube Icon SVG -->
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M23.498 6.186C23.224 5.171 22.427 4.374 21.412 4.1C19.574 3.6 12 3.6 12 3.6C12 3.6 4.426 3.6 2.588 4.1C1.573 4.374 0.776 5.171 0.502 6.186C0 8.026 0 12 0 12C0 12 0 15.974 0.502 17.814C0.776 18.829 1.573 19.626 2.588 19.9C4.426 20.4 12 20.4 12 20.4C12 20.4 19.574 20.4 21.412 19.9C22.427 19.626 23.224 18.829 23.498 17.814C24 15.974 24 12 24 12C24 12 24 8.026 23.498 6.186ZM9.545 15.568V8.432L15.818 12L9.545 15.568Z" />
+                </svg>
+            </div>
+            <p class="status-text">
+                Go to <strong>YouTube Watch History</strong><br>
+                and click the button below.
+            </p>
+        </div>
+
+        <button id="collectBtn" class="pulse-effect">
+            START DIAGNOSIS
+        </button>
+
+    </div>
+
+    <div class="footer">
+        SAFE & SECURE ANALYSIS v3.0
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>
