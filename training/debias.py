@@ -91,7 +91,7 @@ class BiasAnalyzer(nn.Module):
         self.device = config['device']
         
         # A. Backbone: KR-SBERT
-        print(f"Loading SBERT model: {config['model_name']}...")
+        print(f"Loading KcBERT model: {config['model_name']}...")
         self.bert = AutoModel.from_pretrained(config['model_name'])
         self.tokenizer = AutoTokenizer.from_pretrained(config['model_name'])
         
@@ -115,7 +115,7 @@ class BiasAnalyzer(nn.Module):
         # 모델을 GPU로 이동
         self.to(self.device)
 
-    def get_sbert_embeddings(self, flat_texts):
+    def get_Kcbert_embeddings(self, flat_texts):
         # 텍스트 리스트를 토크나이징 및 임베딩
         inputs = self.tokenizer(
             flat_texts,
@@ -151,7 +151,7 @@ class BiasAnalyzer(nn.Module):
         
         # 2. SBERT Embedding
         # Shape: (Batch * 2, Hidden_Dim)
-        flat_embeddings = self.get_sbert_embeddings(flat_texts)
+        flat_embeddings = self.get_Kcbert_embeddings(flat_texts)
         
         # 3. Reshape & Self-Attention
         # 다시 (Batch, 2, Hidden)으로 묶어서 Transformer에 넣음
