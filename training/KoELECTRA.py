@@ -54,7 +54,7 @@ except FileNotFoundError:
 
 
 # 1-1. 커스텀 데이터셋 클래스 정의 (이전 코드와 동일)
-class KCELectraDataset(Dataset):
+class KoELectraDataset(Dataset):
     def __init__(self, df, tokenizer, max_len):
         self.sentences = df['text_input'].tolist()
         self.labels = df['label_id'].values
@@ -87,15 +87,15 @@ class KCELectraDataset(Dataset):
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
 # 데이터셋 및 데이터로더 생성
-train_dataset = KCELectraDataset(train_df, tokenizer, MAX_LEN)
-val_dataset = KCELectraDataset(val_df, tokenizer, MAX_LEN)
+train_dataset = KoELectraDataset(train_df, tokenizer, MAX_LEN)
+val_dataset = KoELectraDataset(val_df, tokenizer, MAX_LEN)
 
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 val_dataloader = DataLoader(val_dataset, batch_size=BATCH_SIZE)
 
 
 # --- 2. 모델 정의 (분류층 추가) (이전 코드와 동일) ---
-class KCELectraClassifier(torch.nn.Module):
+class KoELectraClassifier(torch.nn.Module):
     def __init__(self, electra, num_classes):
         super(KCELectraClassifier, self).__init__()
         self.electra = electra
@@ -116,7 +116,7 @@ class KCELectraClassifier(torch.nn.Module):
 
 # 모델 로드 및 장치 이동
 electra_model = AutoModel.from_pretrained(MODEL_NAME)
-model = KCELectraClassifier(electra_model, NUM_CLASSES)
+model = KoELectraClassifier(electra_model, NUM_CLASSES)
 model.to(DEVICE)
 
 # --- 3. 학습 설정 (클래스 불균형 가중치 적용) ---
